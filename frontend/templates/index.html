@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudOps Rescue Center</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+<div class="app-shell">
+
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-mark">CR</div>
+            <div>
+                <h2>CloudOps</h2>
+                <span>Rescue Center</span>
+            </div>
+        </div>
+
+        <div class="workspace">
+            <span class="workspace-label">WORKSPACE</span>
+            <div class="workspace-card">
+                <div class="workspace-icon">☁</div>
+                <div>
+                    <strong>Production</strong>
+                    <small>India / ap-south-1</small>
+                </div>
+                <span class="chevron">⌄</span>
+            </div>
+        </div>
+
+        <nav>
+            <span class="nav-label">MONITOR</span>
+            <a class="nav-item active" href="#overview"><span>⌂</span> Overview</a>
+            <a class="nav-item" href="#incidents"><span>⚠</span> Incidents <b>{{ open_count }}</b></a>
+            <a class="nav-item" href="#services"><span>◈</span> Services</a>
+            <a class="nav-item" href="#analytics"><span>▥</span> Analytics</a>
+
+            <span class="nav-label nav-gap">INFRASTRUCTURE</span>
+            <a class="nav-item" href="#services"><span>◫</span> Containers</a>
+            <a class="nav-item" href="#services"><span>◇</span> Kubernetes</a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="mini-user">
+                <div class="avatar">A</div>
+                <div>
+                    <strong>CloudOps Admin</strong>
+                    <small>Operations</small>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main">
+
+        <header class="topbar">
+            <div class="mobile-brand">
+                <div class="brand-mark">CR</div>
+                <strong>CloudOps Rescue Center</strong>
+            </div>
+
+            <div class="breadcrumb">
+                <span>Workspace</span><b>/</b><strong>Overview</strong>
+            </div>
+
+            <div class="top-actions">
+                <button class="icon-btn" title="Notifications">♧<span class="notification-dot"></span></button>
+                <div class="system-pill">
+                    <span class="pulse {{ 'online' if api_online else 'offline' }}"></span>
+                    {{ 'All systems operational' if api_online else 'API unavailable' }}
+                </div>
+            </div>
+        </header>
+
+        <div class="page" id="overview">
+
+            <section class="hero">
+                <div>
+                    <div class="eyebrow">CLOUD OPERATIONS CENTER</div>
+                    <h1>Good morning, <span>CloudOps</span> 👋</h1>
+                    <p>Monitor incidents, services and infrastructure health from one place.</p>
+                </div>
+
+                <button class="primary-btn" onclick="openModal()">
+                    <span>＋</span> Report Incident
+                </button>
+            </section>
+
+            <section class="metrics">
+                <article class="metric-card">
+                    <div class="metric-top">
+                        <span>Total Incidents</span>
+                        <div class="metric-icon purple">▦</div>
+                    </div>
+                    <div class="metric-number">{{ total }}</div>
+                    <div class="metric-foot">All recorded incidents</div>
+                </article>
+
+                <article class="metric-card">
+                    <div class="metric-top">
+                        <span>Open Incidents</span>
+                        <div class="metric-icon amber">!</div>
+                    </div>
+                    <div class="metric-number">{{ open_count }}</div>
+                    <div class="metric-foot amber-text">Requires attention</div>
+                </article>
+
+                <article class="metric-card">
+                    <div class="metric-top">
+                        <span>Resolved</span>
+                        <div class="metric-icon green">✓</div>
+                    </div>
+                    <div class="metric-number">{{ resolved_count }}</div>
+                    <div class="metric-foot green-text">Successfully resolved</div>
+                </article>
+
+                <article class="metric-card">
+                    <div class="metric-top">
+                        <span>API Health</span>
+                        <div class="metric-icon blue">⌁</div>
+                    </div>
+                    <div class="metric-number">{{ '100%' if api_online else '0%' }}</div>
+                    <div class="metric-foot {{ 'green-text' if api_online else 'red-text' }}">
+                        {{ 'Incident API responding' if api_online else 'Incident API offline' }}
+                    </div>
+                </article>
+            </section>
+
+            <section class="dashboard-grid">
+
+                <article class="panel incidents-panel" id="incidents">
+                    <div class="panel-heading">
+                        <div>
+                            <h2>Active Incidents</h2>
+                            <p>Latest events reported by your infrastructure</p>
+                        </div>
+                        <span class="live-tag"><i></i> LIVE</span>
+                    </div>
+
+                    <div class="table-toolbar">
+                        <div class="search-box">
+                            <span>⌕</span>
+                            <input id="searchInput" type="text" placeholder="Search incidents..." onkeyup="filterIncidents()">
+                        </div>
+                        <select id="severityFilter" onchange="filterIncidents()">
+                            <option value="ALL">All severity</option>
+                            <option value="CRITICAL">Critical</option>
+                            <option value="HIGH">High</option>
+                            <option value="MEDIUM">Medium</option>
+                            <option value="LOW">Low</option>
+                        </select>
+                    </div>
+
+                    {% if incidents %}
+                    <div class="incident-table-wrap">
+                        <table id="incidentTable">
+                            <thead>
+                                <tr>
+                                    <th>INCIDENT</th>
+                                    <th>SEVERITY</th>
+                                    <th>STATUS</th>
+                                    <th>ID</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for incident in incidents|reverse %}
+                                <tr class="incident-row"
+                                    data-search="{{ incident.title|lower }} {{ incident.id|lower }}"
+                                    data-severity="{{ incident.severity }}">
+                                    <td>
+                                        <div class="incident-title">
+                                            <div class="severity-dot {{ incident.severity|lower }}"></div>
+                                            <div>
+                                                <strong>{{ incident.title }}</strong>
+                                                <small>Technical incident</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge severity {{ incident.severity|lower }}">{{ incident.severity }}</span></td>
+                                    <td><span class="badge status {{ incident.status|lower }}">{{ incident.status }}</span></td>
+                                    <td><code>{{ incident.id }}</code></td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="noResults" class="no-results" style="display:none">No incidents match your filters.</div>
+                    {% else %}
+                    <div class="empty-state">
+                        <div class="empty-orb">✓</div>
+                        <h3>No incidents right now</h3>
+                        <p>Your infrastructure is quiet. Humanity survives another deployment.</p>
+                        <button class="secondary-btn" onclick="openModal()">Report an incident</button>
+                    </div>
+                    {% endif %}
+                </article>
+
+                <article class="panel severity-panel" id="analytics">
+                    <div class="panel-heading">
+                        <div>
+                            <h2>Severity Overview</h2>
+                            <p>Incident distribution</p>
+                        </div>
+                    </div>
+
+                    <div class="severity-chart">
+                        <div class="donut"
+                             style="--critical: {{ critical_count }}; --high: {{ high_count }}; --medium: {{ medium_count }}; --low: {{ low_count }};">
+                            <div class="donut-inner">
+                                <strong>{{ total }}</strong>
+                                <span>total</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="legend">
+                        <div><span class="legend-dot critical"></span><span>Critical</span><strong>{{ critical_count }}</strong></div>
+                        <div><span class="legend-dot high"></span><span>High</span><strong>{{ high_count }}</strong></div>
+                        <div><span class="legend-dot medium"></span><span>Medium</span><strong>{{ medium_count }}</strong></div>
+                        <div><span class="legend-dot low"></span><span>Low</span><strong>{{ low_count }}</strong></div>
+                    </div>
+                </article>
+
+            </section>
+
+            <section class="dashboard-grid bottom-grid">
+
+                <article class="panel" id="services">
+                    <div class="panel-heading">
+                        <div>
+                            <h2>Service Health</h2>
+                            <p>Current application components</p>
+                        </div>
+                    </div>
+
+                    <div class="service-list">
+                        <div class="service-row">
+                            <div class="service-left"><span class="service-icon purple">◎</span><div><strong>Frontend</strong><small>Flask Web Application</small></div></div>
+                            <span class="health-status"><i></i> Healthy</span>
+                            <code>:3000</code>
+                        </div>
+
+                        <div class="service-row">
+                            <div class="service-left"><span class="service-icon blue">⚙</span><div><strong>Incident API</strong><small>Flask REST API</small></div></div>
+                            <span class="health-status"><i></i> Healthy</span>
+                            <code>:5000</code>
+                        </div>
+
+                        <div class="service-row">
+                            <div class="service-left"><span class="service-icon amber">♢</span><div><strong>Notification Service</strong><small>Event processor</small></div></div>
+                            <span class="health-status"><i></i> Healthy</span>
+                            <code>:5001</code>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="panel architecture-panel">
+                    <div class="panel-heading">
+                        <div>
+                            <h2>Architecture</h2>
+                            <p>Local service topology</p>
+                        </div>
+                    </div>
+
+                    <div class="topology">
+                        <div class="topology-node purple-node"><span>◉</span><strong>Frontend</strong><small>:3000</small></div>
+                        <div class="topology-line">↓</div>
+                        <div class="topology-node blue-node"><span>⚙</span><strong>Incident API</strong><small>:5000</small></div>
+                        <div class="topology-line">↓</div>
+                        <div class="topology-node amber-node"><span>♢</span><strong>Notification</strong><small>:5001</small></div>
+                    </div>
+                </article>
+
+            </section>
+
+            <footer>
+                <span>CloudOps Rescue Center</span>
+                <span>Local Development Environment · Docker ready</span>
+            </footer>
+
+        </div>
+    </main>
+</div>
+
+<div class="modal-overlay" id="modal">
+    <div class="modal-card">
+        <button class="modal-close" onclick="closeModal()">×</button>
+        <div class="modal-icon">🚨</div>
+        <div class="eyebrow">NEW INCIDENT</div>
+        <h2>Report an incident</h2>
+        <p>Create an incident and send it through the Incident API.</p>
+
+        <form action="/create" method="POST">
+            <label>Incident title</label>
+            <input name="title" placeholder="e.g. Website Down" required>
+
+            <label>Severity</label>
+            <select name="severity" required>
+                <option value="LOW">LOW</option>
+                <option value="MEDIUM" selected>MEDIUM</option>
+                <option value="HIGH">HIGH</option>
+                <option value="CRITICAL">CRITICAL</option>
+            </select>
+
+            <button class="primary-btn full-btn" type="submit">Create Incident →</button>
+        </form>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
