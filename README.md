@@ -251,16 +251,6 @@ AWS credentials should never be hardcoded into source code. Use IAM roles, envir
 - How scaling, rolling updates, and rollback work
 - How cloud networking and security groups affect containerized applications
 
-## Resume Description
-
-**CloudOps Rescue Center | Python, Docker, Docker Compose, AWS ECR, ECS Fargate, Kubernetes**
-
-Built a containerized 3-service incident management system and deployed it from local Docker Compose to AWS Fargate and Kubernetes, demonstrating service networking, health checks, scaling, self-healing, rolling updates, and rollback.
-
-## Interview Explanation
-
-> I built CloudOps Rescue Center to understand the complete container lifecycle, from Dockerizing a Python microservice application to deploying it on AWS Fargate and using Kubernetes for scaling, self-healing, rolling updates, and rollback.
-
 ## Project Note
 
 This is a learning and portfolio project intended to demonstrate cloud, containerization, and DevOps concepts. It is not intended to represent a production incident-management platform with enterprise-grade security, authentication, observability, or disaster recovery.
@@ -269,4 +259,3 @@ This is a learning and portfolio project intended to demonstrate cloud, containe
 
 **Anuja Gaikwad**
 
-GitHub: https://github.com/AnujaGaikwad
